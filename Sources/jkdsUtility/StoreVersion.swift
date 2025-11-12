@@ -58,6 +58,18 @@ public struct StoreVersion {
         case equal
     }
     
+    public struct VersionDifferenceCheckResult {
+        public let currentVersion: String
+        public let storeVersion: String?
+        public let difference: StoreVersion.VersionDifference?
+        
+        public init(currentVersion: String, storeVersion: String?, difference: StoreVersion.VersionDifference?) {
+            self.currentVersion = currentVersion
+            self.storeVersion = storeVersion
+            self.difference = difference
+        }
+    }
+    
     private static func compareVersions(storeVersion: String, currentVersion: String) -> VersionDifference {
         let storeComponents = storeVersion.split(separator: ".").compactMap { Int($0) }
         let currentComponents = currentVersion.split(separator: ".").compactMap { Int($0) }
@@ -89,31 +101,38 @@ public struct StoreVersion {
     }
 
     /** 현제 버전과 스토어 버전 비교 */
-    public static func compareAppVersion(appId:String, bundleVersion:String, complete:@escaping @Sendable (StoreVersion.VersionDifference?)->Void) {
+    public static func compareAppVersion(appId:String, currentVersion:String, complete:@escaping @Sendable (StoreVersion.VersionDifferenceCheckResult)->Void) {
         Task {
             let appVersion = await StoreVersion.fetchAppVersion(appID: appId)
             let result: StoreVersion.VersionDifference?
             if let version = appVersion {
-                result = StoreVersion.compareVersions(storeVersion: version, currentVersion: bundleVersion)
+                result = StoreVersion.compareVersions(storeVersion: version, currentVersion: currentVersion)
             } else {
                 result = nil
             }
             await MainActor.run {
-                complete(result)
+                complete(.init(currentVersion: currentVersion, storeVersion: appVersion, difference: result))
             }
         }
     }
     
     /** 현제 버전과 스토어 버전 비교 */
-    public static func compareAppVersion(appId:String, bundleVersion:String) async -> StoreVersion.VersionDifference? {
+    public static func compareAppVersion(appId:String, currentVersion:String) async -> StoreVersion.VersionDifferenceCheckResult? {
         let appVersion = await StoreVersion.fetchAppVersion(appID: appId)
         let result: StoreVersion.VersionDifference?
         if let version = appVersion {
-            result = StoreVersion.compareVersions(storeVersion: version, currentVersion: bundleVersion)
+            result = StoreVersion.compareVersions(storeVersion: version, currentVersion: currentVersion)
         } else {
             result = nil
         }
-        return result
+        return .init(currentVersion: currentVersion, storeVersion: appVersion, difference: result)
+    }
+    
+    /// Returns detailed comparison including both versions and the computed difference.
+    public static func compareAppVersionDetail(appId: String, bundleVersion: String) async -> VersionDifferenceCheckResult? {
+        guard let store = await StoreVersion.fetchAppVersion(appID: appId) else { return nil }
+        let diff = StoreVersion.compareVersions(storeVersion: store, currentVersion: bundleVersion)
+        return VersionDifferenceCheckResult(currentVersion: bundleVersion, storeVersion: store, difference: diff)
     }
 }
 
@@ -126,8 +145,11 @@ public struct StoreVersion {
                 print(version ?? "없음")
             }
   
-            StoreVersion.compareAppVersion(appId: "1543840915", bundleVersion: "1.18.2") { result in
-                print(result ?? "?")
+            StoreVersion.compareAppVersion(appId: "1543840915", currentVersion: "1.18.2") { result in
+                print(result.currentVersion)
+                print(result.storeVersion ?? "미출시")
+                print(result.difference ?? "")
+                
             }
             
         } label : {

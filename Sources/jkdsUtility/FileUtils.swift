@@ -8,102 +8,6 @@ import Foundation
 
 import SwiftUI
 
-public enum FileIOError : Error {
-    /** 파일이 이미 존재함 */
-    case isExist
-    /** 파일 생성 실패*/
-    case failedToSave
-}
-
-fileprivate extension Double {
-    var fileSizeString:String {
-        let formatter = ByteCountFormatter()
-        formatter.allowedUnits = [.useKB, .useMB, .useGB, .useTB]
-        formatter.countStyle = .file
-        return formatter.string(fromByteCount: Int64(self))
-    }
-}
-
-public extension URL {
-    /**
-     도큐먼트 디랙토리 URL 생성
-     let url:URL = .documentsPath
-     */
-    static var documentsPath:URL {
-        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-    }
-
-    /**
-     
-     디랙토리 URL 만들기 (/test)
-     let url:URL = .makeURL(withPath : "test")
-     파일 URL 만들기 (/test/test.png)
-     let url:URL = .makeURL(withPath : "test", fileName: "test.png")
-     */
-    static func makeURL(withPath path:String, fileName:String? = nil)->URL {
-        let url:URL = .documentsPath.appendingPathComponent(path, isDirectory: true)
-        if let fileName = fileName {
-            return url.appendingPathComponent(fileName, isDirectory: false)
-        } else {
-            return url
-        }
-    }
-    
-    /** 파일사이즈 구하기 (byte 단위) */
-    var fileSize:Double {
-        guard let attributes = try? FileManager.default.attributesOfItem(
-            atPath: self.path
-        ) else {
-            return 0.0
-        }
-            
-        let fileSize = attributes[.size] as? UInt64 ?? 0
-        return Double(fileSize)
-    }
-    
-    var fileSizeString:String {
-        return self.fileSize.fileSizeString
-    }
-    
-    var directorySize:Double {
-        guard let enumerator = FileManager.default.enumerator(
-            at: self,
-            includingPropertiesForKeys: [.fileSizeKey, .isDirectoryKey],
-            options: [.skipsHiddenFiles]
-        ) else {
-            return 0
-        }
-        
-        var totalSize: UInt64 = 0
-        
-        for case let fileURL as URL in enumerator {
-            let values = try? fileURL.resourceValues(
-                forKeys: [.isDirectoryKey, .fileSizeKey]
-            )
-            
-            if values?.isDirectory == true {
-                continue
-            }
-            
-            totalSize += UInt64(values?.fileSize ?? 0)
-        }
-        
-        return Double(totalSize)
-    }
-    
-    var directorySizeString:String {
-        directorySize.fileSizeString
-    }
-    
-    var isExist:Bool {
-        FileManager.default.fileExists(atPath: self.path)
-    }
-    
-    func delete() throws {
-        try FileManager.default.removeItem(atPath: self.path)
-    }
-    
-}
 public struct FileUtils {
     
     // MARK: - folder
@@ -206,3 +110,101 @@ extension NSURL {
 }
 
 
+
+public enum FileIOError : Error {
+    /** 파일이 이미 존재함 */
+    case isExist
+    /** 파일 생성 실패*/
+    case failedToSave
+}
+
+fileprivate extension Double {
+    var fileSizeString:String {
+        let formatter = ByteCountFormatter()
+        formatter.allowedUnits = [.useKB, .useMB, .useGB, .useTB]
+        formatter.countStyle = .file
+        return formatter.string(fromByteCount: Int64(self))
+    }
+}
+
+
+public extension URL {
+    /**
+     도큐먼트 디랙토리 URL 생성
+     let url:URL = .documentsPath
+     */
+    static var documentsPath:URL {
+        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+    }
+
+    /**
+     
+     디랙토리 URL 만들기 (/test)
+     let url:URL = .makeURL(withPath : "test")
+     파일 URL 만들기 (/test/test.png)
+     let url:URL = .makeURL(withPath : "test", fileName: "test.png")
+     */
+    static func makeURL(withPath path:String, fileName:String? = nil)->URL {
+        let url:URL = .documentsPath.appendingPathComponent(path, isDirectory: true)
+        if let fileName = fileName {
+            return url.appendingPathComponent(fileName, isDirectory: false)
+        } else {
+            return url
+        }
+    }
+    
+    /** 파일사이즈 구하기 (byte 단위) */
+    var fileSize:Double {
+        guard let attributes = try? FileManager.default.attributesOfItem(
+            atPath: self.path
+        ) else {
+            return 0.0
+        }
+            
+        let fileSize = attributes[.size] as? UInt64 ?? 0
+        return Double(fileSize)
+    }
+    
+    var fileSizeString:String {
+        return self.fileSize.fileSizeString
+    }
+    
+    var directorySize:Double {
+        guard let enumerator = FileManager.default.enumerator(
+            at: self,
+            includingPropertiesForKeys: [.fileSizeKey, .isDirectoryKey],
+            options: [.skipsHiddenFiles]
+        ) else {
+            return 0
+        }
+        
+        var totalSize: UInt64 = 0
+        
+        for case let fileURL as URL in enumerator {
+            let values = try? fileURL.resourceValues(
+                forKeys: [.isDirectoryKey, .fileSizeKey]
+            )
+            
+            if values?.isDirectory == true {
+                continue
+            }
+            
+            totalSize += UInt64(values?.fileSize ?? 0)
+        }
+        
+        return Double(totalSize)
+    }
+    
+    var directorySizeString:String {
+        directorySize.fileSizeString
+    }
+    
+    var isExist:Bool {
+        FileManager.default.fileExists(atPath: self.path)
+    }
+    
+    func delete() throws {
+        try FileManager.default.removeItem(atPath: self.path)
+    }
+    
+}

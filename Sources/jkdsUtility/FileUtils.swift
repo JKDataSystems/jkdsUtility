@@ -104,7 +104,7 @@ public struct FileUtils {
     
     
     //MARK: - download
-    func downloadFile(
+    public func downloadFile(
         from url: URL,
         to directoryURL: URL
     ) async throws -> URL {

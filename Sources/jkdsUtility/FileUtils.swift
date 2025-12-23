@@ -5,6 +5,7 @@
 //  Created by 서창열 on 12/23/25.
 //
 import Foundation
+import Alamofire
 
 /**
  파일 입출력
@@ -102,11 +103,37 @@ public struct FileUtils {
     public static func fileSizeInKB(at url: URL) throws -> Double {
         url.fileSize
     }
+    
+    
+    //MARK: - download
+    func downloadFile(
+        from url: URL,
+        to directoryURL: URL
+    ) async throws -> URL {
+
+        let destination: DownloadRequest.Destination = { _, response in
+            let fileName = response.suggestedFilename ?? UUID().uuidString
+            let fileURL = directoryURL.appendingPathComponent(fileName)
+            return (fileURL, [.removePreviousFile, .createIntermediateDirectories])
+        }
+        
+        let response = await Session.shared
+            .download(url, to: destination)
+            .serializingDownloadedFileURL()
+            .response
+
+        switch response.result {
+        case .success(let fileURL):
+            return fileURL
+        case .failure(let error):
+            throw error
+        }
+    }
 }
 
-extension NSURL {
+extension URL {
     func excludeFromBackup() throws {
-        try setResourceValue(true, forKey: .isExcludedFromBackupKey)
+        try NSURL(fileURLWithPath: self.absoluteString).setResourceValue(true, forKey: .isExcludedFromBackupKey)
     }
 }
 
@@ -208,4 +235,14 @@ public extension URL {
         try FileManager.default.removeItem(atPath: self.path)
     }
     
+}
+
+
+extension Session {
+    static let shared : Session = {
+        let configuration = URLSessionConfiguration.default
+        configuration.httpMaximumConnectionsPerHost = 12
+        configuration.timeoutIntervalForRequest = 10
+        return Session(configuration: configuration)
+    }()
 }

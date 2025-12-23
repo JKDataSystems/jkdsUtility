@@ -7,6 +7,9 @@
 import Foundation
 import SwiftUI
 
+/**
+ DEBUG 플래그에서만 작동하는 디버깅 로그
+ */
 public struct Log {
     public static func debug(_ items: Any..., separator: String = " ", terminator: String = "\n") {
 #if DEBUG

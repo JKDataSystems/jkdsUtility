@@ -6,8 +6,9 @@
 //
 import Foundation
 
-import SwiftUI
-
+/**
+ 파일 입출력
+ */
 public struct FileUtils {
     
     // MARK: - folder

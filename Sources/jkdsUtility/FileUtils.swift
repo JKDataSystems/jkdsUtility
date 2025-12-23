@@ -57,9 +57,7 @@ public struct FileUtils {
             directoryName,
             isDirectory: true
         )
-        var values = URLResourceValues()
-        values.isExcludedFromBackup = true
-        try url.setResourceValues(values)
+        try url.excludeFromBackup()
     }
 
 
@@ -130,14 +128,6 @@ public struct FileUtils {
         }
     }
 }
-
-extension URL {
-    func excludeFromBackup() throws {
-        try NSURL(fileURLWithPath: self.absoluteString).setResourceValue(true, forKey: .isExcludedFromBackupKey)
-    }
-}
-
-
 
 public enum FileIOError : Error {
     /** 파일이 이미 존재함 */
@@ -234,6 +224,14 @@ public extension URL {
     func delete() throws {
         try FileManager.default.removeItem(atPath: self.path)
     }
+    
+    /** iCloude 백업 제외하기 */
+    mutating func excludeFromBackup() throws {
+        var values = URLResourceValues()
+        values.isExcludedFromBackup = true
+        try setResourceValues(values)
+    }
+
     
 }
 
